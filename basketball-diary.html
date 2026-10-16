@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Дневник баскетболиста</title>
+<style>
+:root{
+  --bg:#eef1f5;--card:#ffffff;--ink:#101828;--muted:#5b6678;--line:#d5dbe5;
+  --accent:#e8590c;--accent-ink:#ffffff;--court:#1d4ed8;--bad:#b42318;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1624;--card:#18223a;--ink:#eef2fa;--muted:#9aa7c0;--line:#2b3956;
+    --accent:#ff8a3d;--accent-ink:#1a0c00;--court:#7aa2ff;--bad:#ff8f84;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1624;--card:#18223a;--ink:#eef2fa;--muted:#9aa7c0;--line:#2b3956;
+  --accent:#ff8a3d;--accent-ink:#1a0c00;--court:#7aa2ff;--bad:#ff8f84;color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.7rem;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 20px}
+h2{font-size:1.1rem;margin:0 0 12px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{border-left:4px solid var(--court);padding:2px 0 2px 10px}
+.stat b{display:block;font-size:1.6rem;line-height:1.2}
+.stat span{color:var(--muted);font-size:.9rem}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--muted)}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--court);outline-offset:1px}
+.wide{grid-column:1/-1}
+button{font:inherit;cursor:pointer;border-radius:8px;border:0}
+.add{background:var(--accent);color:var(--accent-ink);font-weight:700;padding:11px 16px}
+.del{background:transparent;color:var(--muted);border:1px solid var(--line);padding:4px 10px;font-size:.85rem}
+.del:hover{color:var(--bad);border-color:var(--bad)}
+#err{color:var(--bad);min-height:1.4em;margin:8px 0 0;font-size:.9rem}
+.chart{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:8px;overflow-x:auto}
+.bar{flex:1 0 34px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:.75rem;color:var(--muted)}
+.bar i{display:block;width:100%;background:var(--court);border-radius:6px 6px 0 0;min-height:3px}
+.bar em{font-style:normal;color:var(--ink);font-weight:600}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row small{color:var(--muted);display:block}
+.pct{font-weight:700;color:var(--accent);white-space:nowrap}
+.empty{color:var(--muted);margin:0}
+#posInfo h3{font-size:1rem;margin:14px 0 4px}
+#posInfo ul{margin:0;padding-left:20px}
+#posInfo li{margin:4px 0}
+.role{color:var(--muted);margin:12px 0 0}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.vcard{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
+.vcard p{margin:0;color:var(--muted);font-size:.9rem}
+.vcard a{margin-top:auto;padding-top:6px;color:var(--court);font-weight:600}
+.track{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:6px}
+.track i{display:block;height:100%;width:0;background:var(--accent);border-radius:6px;transition:width .4s}
+.badge{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
+.badge.done{border:2px solid var(--accent);padding:9px}
+.badge p{margin:2px 0 6px;color:var(--muted);font-size:.85rem}
+.badge small{display:block;margin-top:4px;color:var(--muted)}
+.badge.done small{color:var(--ink);font-weight:700}
+@media (prefers-reduced-motion:reduce){.track i{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>🏀 Дневник баскетболиста</h1>
+  <p class="sub">Записывай тренировки и смотри, как растёт процент попаданий.</p>
+
+  <section aria-label="Сводка">
+    <div class="stats">
+      <div class="stat"><b id="sSessions">0</b><span>тренировок</span></div>
+      <div class="stat"><b id="sShots">0</b><span>бросков</span></div>
+      <div class="stat"><b id="sPct">—</b><span>попаданий</span></div>
+      <div class="stat"><b id="sBest">—</b><span>лучший результат</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Цели и достижения</h2>
+    <div><strong id="lvl">Уровень 1</strong> <span class="empty" id="xp"></span></div>
+    <div class="track"><i id="lvlBar"></i></div>
+    <div style="margin-top:16px">
+      <label style="flex-direction:row;align-items:center;gap:8px">Цель на неделю (тренировок): <select id="wk" style="width:auto"></select></label>
+      <p class="empty" id="wkText" style="margin:6px 0 0"></p>
+      <div class="track"><i id="wkBar"></i></div>
+    </div>
+    <p style="margin:16px 0 12px">Серия: <strong id="streak">0 дней подряд</strong></p>
+    <div class="vgrid" id="badges"></div>
+  </section>
+
+  <section>
+    <h2>Моя позиция</h2>
+    <label>Позиция<select id="pos"></select></label>
+    <div id="posInfo"></div>
+  </section>
+
+  <section>
+    <h2>Новая тренировка</h2>
+    <form id="f">
+      <label>Дата<input type="date" id="date" required></label>
+      <label>Тип
+        <select id="type">
+          <option>Броски</option><option>Ведение</option><option>Защита</option>
+          <option>Физподготовка</option><option>Игра</option>
+        </select>
+      </label>
+      <label>Бросков всего<input type="number" id="att" min="0" value="0" inputmode="numeric"></label>
+      <label>Попаданий<input type="number" id="made" min="0" value="0" inputmode="numeric"></label>
+      <label class="wide">Заметка<input type="text" id="note" maxlength="120" placeholder="Например: хорошо шли трёхочковые"></label>
+      <button class="add wide" type="submit">Сохранить тренировку</button>
+    </form>
+    <p id="err" role="alert"></p>
+  </section>
+
+  <section>
+    <h2>Прогресс: последние тренировки с бросками</h2>
+    <div class="chart" id="chart"></div>
+  </section>
+
+  <section>
+    <h2>Видеоуроки</h2>
+    <p class="empty" style="margin-bottom:12px">Каждая карточка открывает на YouTube подборку роликов по теме.</p>
+    <div class="vgrid" id="videos"></div>
+  </section>
+
+  <section>
+    <h2>История</h2>
+    <div id="list"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  var KEY="basketball-diary-v1", items=[];
+  function load(){
+    try{var raw=localStorage.getItem(KEY);items=raw?JSON.parse(raw):[];if(!Array.isArray(items))items=[];}
+    catch(e){items=[];}
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}}
+  function pct(e){return e.att>0?Math.round(e.made/e.att*100):null;}
+  function $(id){return document.getElementById(id);}
+  function fmtDate(s){var p=s.split("-");return p.length===3?p[2]+"."+p[1]+"."+p[0]:s;}
+  function today(){var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
+
+  function render(){
+    items.sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:b.id-a.id;});
+    var att=0,made=0,best=null;
+    items.forEach(function(e){att+=e.att;made+=e.made;var p=pct(e);if(p!==null&&(best===null||p>best))best=p;});
+    $("sSessions").textContent=items.length;
+    $("sShots").textContent=att;
+    $("sPct").textContent=att>0?Math.round(made/att*100)+"%":"—";
+    $("sBest").textContent=best!==null?best+"%":"—";
+    renderGoals();
+
+    var chart=$("chart");chart.textContent="";
+    var withShots=items.filter(function(e){return e.att>0;}).slice(0,8).reverse();
+    if(!withShots.length){
+      var p0=document.createElement("p");p0.className="empty";
+      p0.textContent="Добавь тренировку с бросками, и здесь появится график.";chart.appendChild(p0);
+    }
+    withShots.forEach(function(e){
+      var p=pct(e),b=document.createElement("div");b.className="bar";
+      b.title=fmtDate(e.date)+": "+p+"%";
+      var em=document.createElement("em");em.textContent=p+"%";
+      var bar=document.createElement("i");bar.style.height=Math.max(p,2)*0.85+"%";
+      var d=document.createElement("span");d.textContent=e.date.slice(8)+"."+e.date.slice(5,7);
+      b.appendChild(em);b.appendChild(bar);b.appendChild(d);chart.appendChild(b);
+    });
+
+    var list=$("list");list.textContent="";
+    if(!items.length){
+      var p1=document.createElement("p");p1.className="empty";
+      p1.textContent="Пока пусто. Сохрани первую тренировку выше.";list.appendChild(p1);
+    }
+    items.forEach(function(e){
+      var row=document.createElement("div");row.className="row";
+      var left=document.createElement("div");
+      var t=document.createElement("strong");t.textContent=e.type+" · "+fmtDate(e.date);
+      var s=document.createElement("small");
+      var line=e.att>0?e.made+" из "+e.att:"без учёта бросков";
+      s.textContent=line+(e.note?" — "+e.note:"");
+      left.appendChild(t);left.appendChild(s);
+      var right=document.createElement("div");right.style.display="flex";right.style.gap="10px";right.style.alignItems="center";
+      var p=pct(e);
+      if(p!==null){var ps=document.createElement("span");ps.className="pct";ps.textContent=p+"%";right.appendChild(ps);}
+      var del=document.createElement("button");del.className="del";del.type="button";del.textContent="Удалить";
+      del.setAttribute("aria-label","Удалить тренировку от "+fmtDate(e.date));
+      del.onclick=function(){items=items.filter(function(x){return x.id!==e.id;});save();render();};
+      right.appendChild(del);row.appendChild(left);row.appendChild(right);list.appendChild(row);
+    });
+  }
+
+  var POSKEY="basketball-diary-pos";
+  var POS={
+    pg:{name:"Разыгрывающий",role:"Мозг команды: ведёт мяч, задаёт темп и раздаёт передачи.",
+      tips:["Веди мяч с поднятой головой и смотри на всю площадку, а не на мяч.","Отдельно тренируй слабую руку: в игре тебя будут направлять на неё.","Не спеши: контролируй темп и выбирай момент для атаки.","Учись читать защиту после заслона (пик-н-ролл): отдать, бросить или пройти."],
+      drills:["Ведение с двумя мячами, 5 минут","Пик-н-ролл с партнёром, 10 повторов в каждую сторону","Передачи в движении: 30 штук","Штрафные: 50 бросков"]},
+    sg:{name:"Атакующий защитник",role:"Главный снайпер на периметре: набирает очки и держит оборону на внешней линии.",
+      tips:["Бросай с ходу: получил мяч, и сразу бросок в одно движение.","Двигайся без мяча и используй заслоны партнёров, чтобы открыться.","Меняй ритм: комбинируй бросок с проходом, чтобы защита не угадывала.","В защите держи дистанцию вытянутой руки и работай ногами."],
+      drills:["Броски после получения мяча с 5 точек, по 10 с каждой","Выход из-под заслона и бросок, 20 повторов","Серии трёхочковых: 5 серий по 10","Проход с финишем под кольцом обеими руками"]},
+    sf:{name:"Лёгкий форвард",role:"Универсал: играет и на периметре, и под кольцом, помогает везде.",
+      tips:["Сочетай бросок и проход: того, кто умеет и то и другое, трудно защищать.","Включайся в подбор, особенно на атакующем щите.","Учись защищаться против игроков разного роста и скорости.","Первым беги в быстрый отрыв: это твой шанс на лёгкие очки."],
+      drills:["Обводка и бросок через защитника, 15 повторов","Броски из углов площадки: 40 штук","Подбор и бросок сразу после отскока","Ведение в быстром отрыве на всю площадку"]},
+    pf:{name:"Тяжёлый форвард",role:"Силовая игра у кольца: подборы, заслоны и очки с близкого расстояния.",
+      tips:["Ставь жёсткие заслоны (но по правилам) и сразу выходи к кольцу.","Борись за позицию на подборе ещё до того, как мяч полетел в кольцо.","Добавь бросок со средней дистанции, чтобы тебя не «зажимали» под щитом.","Заканчивай атаку через контакт: не бойся контакта и оставайся устойчивым."],
+      drills:["Подбор на щите и бросок, 20 повторов","Броски из-под кольца с имитацией контакта","Упражнение «Микан»: 3 подхода по 1 минуте","Броски со средней дистанции: 50 штук"]},
+    c:{name:"Центровой",role:"Опора обороны: защищает кольцо, берёт подборы и играет спиной к кольцу.",
+      tips:["Занимай позицию глубоко под кольцом и не отходи далеко от него.","Блок-шоты делай без лишнего прыжка: не прыгай на финт, чтобы не получить фол.","Работай ногами и разучи крюк (бросок над головой) обеими руками.","Подбирай мяч и быстро выбрасывай его разыгрывающему."],
+      drills:["Крюки правой и левой рукой: по 20 каждой","Упражнение «Микан»: 3 подхода по 1 минуте","Подбор и быстрая выброска мяча, 15 повторов","Заслон и выход к кольцу за мячом, 10 повторов"]}
+  };
+  function addList(box,title,arr){
+    var h=document.createElement("h3");h.textContent=title;box.appendChild(h);
+    var ul=document.createElement("ul");
+    arr.forEach(function(t){var li=document.createElement("li");li.textContent=t;ul.appendChild(li);});
+    box.appendChild(ul);
+  }
+  function showPos(){
+    var box=$("posInfo"),k=$("pos").value;box.textContent="";
+    if(!POS[k]){var p=document.createElement("p");p.className="role";p.textContent="Выбери позицию, и здесь появятся советы и упражнения.";box.appendChild(p);return;}
+    var r=document.createElement("p");r.className="role";r.textContent=POS[k].role;box.appendChild(r);
+    addList(box,"Советы",POS[k].tips);
+    addList(box,"Упражнения на тренировку",POS[k].drills);
+    var n=document.createElement("p");n.className="role";n.textContent="Начинай тренировку с разминки на 10 минут. Это общие советы, а детали лучше уточнить у тренера.";box.appendChild(n);
+  }
+  function loadPos(){
+    var sel=$("pos"),first=document.createElement("option");
+    first.value="";first.textContent="Выбери позицию";sel.appendChild(first);
+    Object.keys(POS).forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=POS[k].name;sel.appendChild(o);});
+    var saved="";try{saved=localStorage.getItem(POSKEY)||"";}catch(e){}
+    if(POS[saved])sel.value=saved;
+    sel.addEventListener("change",function(){try{localStorage.setItem(POSKEY,sel.value);}catch(e){}showPos();});
+    showPos();
+  }
+
+  var VIDEOS=[
+    {t:"Техника броска",d:"Постановка рук и ног, траектория полёта мяча.",q:"как правильно бросать в баскетболе техника броска"},
+    {t:"Штрафные броски",d:"Стабильный ритуал и повторяемое движение.",q:"штрафной бросок баскетбол техника"},
+    {t:"Дриблинг",d:"Ведение мяча, смена руки, контроль.",q:"дриблинг баскетбол обучение для начинающих"},
+    {t:"Передачи",d:"От груди, от пола, одной рукой, в движении.",q:"виды передач в баскетболе обучение"},
+    {t:"Защита",d:"Стойка, работа ног, дистанция до соперника.",q:"защита в баскетболе стойка и работа ног"},
+    {t:"Пик-н-ролл",d:"Заслон с мячом и выбор: пройти, бросить, отдать.",q:"пик-н-ролл баскетбол обучение"},
+    {t:"Комбинации в нападении",d:"Заслоны, розыгрыши, движение без мяча.",q:"баскетбол комбинации в нападении для начинающих"},
+    {t:"Подбор",d:"Выбор позиции и борьба за отскок.",q:"подбор в баскетболе техника"},
+    {t:"Финиш под кольцом",d:"Двухшажный бросок (лэйап) после обводки.",q:"баскетбол лэйап двухшажный бросок обучение"}
+  ];
+  function renderVideos(){
+    var box=$("videos");box.textContent="";
+    VIDEOS.forEach(function(v){
+      var c=document.createElement("div");c.className="vcard";
+      var h=document.createElement("strong");h.textContent=v.t;
+      var p=document.createElement("p");p.textContent=v.d;
+      var a=document.createElement("a");
+      a.href="https://www.youtube.com/results?search_query="+encodeURIComponent(v.q);
+      a.target="_blank";a.rel="noopener noreferrer";a.textContent="Смотреть на YouTube";
+      c.appendChild(h);c.appendChild(p);c.appendChild(a);box.appendChild(c);
+    });
+  }
+
+  var WKKEY="basketball-diary-week";
+  var BADGES=[
+    {t:"Первый шаг",d:"Запиши первую тренировку",k:"sessions",g:1},
+    {t:"Разогрелся",d:"5 тренировок в дневнике",k:"sessions",g:5},
+    {t:"Постоянство",d:"20 тренировок в дневнике",k:"sessions",g:20},
+    {t:"Сотня",d:"100 бросков за всё время",k:"att",g:100},
+    {t:"Пятьсот",d:"500 бросков за всё время",k:"att",g:500},
+    {t:"Тысяча",d:"1000 бросков за всё время",k:"att",g:1000},
+    {t:"Точный глаз",d:"50% попаданий в сумме (от 20 бросков)",k:"pct",g:50,u:"%"},
+    {t:"Снайпер",d:"70% за одну тренировку (от 10 бросков)",k:"best10",g:70,u:"%"},
+    {t:"Три дня подряд",d:"Тренируйся три дня подряд",k:"bestStreak",g:3},
+    {t:"Неделя огня",d:"Тренируйся семь дней подряд",k:"bestStreak",g:7},
+    {t:"Универсал",d:"Попробуй все 5 типов тренировок",k:"typeCount",g:5}
+  ];
+  function pad(n){return n<10?"0"+n:""+n;}
+  function fmt(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+  function shift(s,n){var p=s.split("-");return fmt(new Date(+p[0],+p[1]-1,+p[2]+n));}
+  function dayWord(n){var a=n%10,b=n%100;return a===1&&b!==11?"день":(a>=2&&a<=4&&(b<10||b>=20))?"дня":"дней";}
+  function ochkoWord(n){var a=n%10,b=n%100;return a===1&&b!==11?"очко":(a>=2&&a<=4&&(b<10||b>=20))?"очка":"очков";}
+  function calc(){
+    var s={sessions:items.length,att:0,made:0,best10:0,types:{},dates:{}};
+    items.forEach(function(e){
+      s.att+=e.att;s.made+=e.made;s.types[e.type]=1;s.dates[e.date]=1;
+      if(e.att>=10){var p=pct(e);if(p>s.best10)s.best10=p;}
+    });
+    s.pct=s.att>=20?Math.round(s.made/s.att*100):0;
+    s.typeCount=Object.keys(s.types).length;
+    var t=today(),i=s.dates[t]?0:1,cur=0;
+    while(s.dates[shift(t,-i)]){cur++;i++;}
+    s.streak=cur;
+    var ds=Object.keys(s.dates).sort(),run=0,best=0;
+    ds.forEach(function(d,k){run=(k>0&&shift(ds[k-1],1)===d)?run+1:1;if(run>best)best=run;});
+    s.bestStreak=best;
+    var from=shift(t,-6);
+    s.week=items.filter(function(e){return e.date>=from&&e.date<=t;}).length;
+    s.points=s.sessions*10+s.made;
+    return s;
+  }
+  function renderGoals(){
+    var s=calc(),lvl=Math.floor(s.points/100)+1,into=s.points%100;
+    $("lvl").textContent="Уровень "+lvl;
+    $("xp").textContent=s.points+" "+ochkoWord(s.points)+", до следующего уровня: "+(100-into);
+    $("lvlBar").style.width=into+"%";
+    var tgt=parseInt($("wk").value,10)||3;
+    $("wkText").textContent=s.week>=tgt?"Цель недели выполнена: "+s.week+" из "+tgt+". Отличная работа!":s.week+" из "+tgt+" тренировок за последние 7 дней";
+    $("wkBar").style.width=Math.min(100,Math.round(s.week/tgt*100))+"%";
+    $("streak").textContent=s.streak+" "+dayWord(s.streak)+" подряд";
+    var box=$("badges");box.textContent="";
+    BADGES.forEach(function(b){
+      var v=s[b.k]||0,done=v>=b.g,u=b.u||"";
+      var c=document.createElement("div");c.className="badge"+(done?" done":"");
+      var h=document.createElement("strong");h.textContent=b.t;
+      var p=document.createElement("p");p.textContent=b.d;
+      var st=document.createElement("small");st.textContent=done?"Получено ✓":v+u+" из "+b.g+u;
+      var tr=document.createElement("div");tr.className="track";
+      var bar=document.createElement("i");bar.style.width=Math.min(100,Math.round(v/b.g*100))+"%";
+      tr.appendChild(bar);c.appendChild(h);c.appendChild(p);c.appendChild(tr);c.appendChild(st);box.appendChild(c);
+    });
+  }
+  function initGoals(){
+    var sel=$("wk");
+    for(var i=1;i<=7;i++){var o=document.createElement("option");o.value=i;o.textContent=i;sel.appendChild(o);}
+    var saved="";try{saved=localStorage.getItem(WKKEY)||"";}catch(e){}
+    sel.value=(+saved>=1&&+saved<=7)?saved:"3";
+    sel.addEventListener("change",function(){try{localStorage.setItem(WKKEY,sel.value);}catch(e){}renderGoals();});
+  }
+
+  $("date").value=today();
+  $("f").addEventListener("submit",function(ev){
+    ev.preventDefault();
+    var a=parseInt($("att").value,10)||0,m=parseInt($("made").value,10)||0,err=$("err");
+    if(a<0||m<0){err.textContent="Числа не могут быть отрицательными.";return;}
+    if(m>a){err.textContent="Попаданий не может быть больше, чем бросков.";return;}
+    err.textContent="";
+    items.push({id:Date.now(),date:$("date").value||today(),type:$("type").value,att:a,made:m,note:$("note").value.trim()});
+    save();render();
+    $("att").value=0;$("made").value=0;$("note").value="";
+  });
+
+  load();loadPos();renderVideos();initGoals();render();
+})();
+</script>
+</body>
+</html>
